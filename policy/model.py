@@ -9,19 +9,24 @@ def parse_config(config_file):
         return yaml.safe_load(f)
 
 
-def make_model(config_file, env_name, video_path=None, tensorboard_log=None):
-    if tensorboard_log is None:
-        tensorboard_log = os.path.join('logs', env_name)
-    
+def make_model(config_file, env, tensorboard_log):
     # Load config
     config = parse_config(config_file)
     
     model = DQN(
-        'MlpPolicy', make_env(env_name, video_path),
+        'MlpPolicy', env,
         policy_kwargs=dict(net_arch=[256, 256]),
+        learning_rate=float(config['learning_rate']),
+        buffer_size=config['buffer_size'],
+        learning_starts=config['learning_starts'],
+        batch_size=config['batch_size'],
+        gamma=config['gamma'],
+        train_freq=config['train_freq'],
+        gradient_steps=config['gradient_steps'],
+        target_update_interval=config['target_update_interval'],
+        exploration_fraction=config['exploration_fraction'],
         verbose=1,
         tensorboard_log=tensorboard_log,
-        **config,
     )
 
     return model
