@@ -2,3 +2,5 @@
 *.pyc
 __pycache__/
 stable-baselines3
+clear_generatives.sh
+parallel_run.sh

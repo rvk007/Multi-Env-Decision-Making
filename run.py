@@ -38,29 +38,29 @@ if __name__ == '__main__':
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--env', type=str, required=True, help='Environment name')
+    parser.add_argument('--env', required=True, help='Environment name')
     parser.add_argument('-t', '--timesteps', type=int, default=1e6, help='Number of timesteps for training')
     parser.add_argument('--eval_episodes', type=int, default=10, help='Number of evaluation episodes')
     parser.add_argument('--test_episodes', type=int, default=3, help='Number of test episodes')
     parser.add_argument('--env_config', default=os.path.join(BASE_DIR, 'environment'), help='Directory containing the environment config')
     parser.add_argument('--model', default=os.path.join(BASE_DIR, 'policy', 'dqn.yaml'), help='Model yaml path')
     parser.add_argument('--weights', default=os.path.join(BASE_DIR, 'weights'), help='Path to store the trained models')
-    parser.add_argument('--logs', default=os.path.join(BASE_DIR, 'logs'), help='Path to store the tensorboard logs')
+    parser.add_argument('--logs', help='Path to store the tensorboard logs')
     args = parser.parse_args()
+
+    if args.logs is None:
+        args.logs = os.path.join(BASE_DIR, 'logs', args.env)
 
     os.makedirs(args.weights, exist_ok=True)
     os.makedirs(args.logs, exist_ok=True)
 
-    if args.logs is None:
-        args.logs = os.path.join('logs', args.env)
-
     print('Training model...')
     model = train_model(args.model, args.env, args.env_config, int(args.timesteps), os.path.join(args.weights, args.env), args.logs)
 
-    print('Evaluating model...')
+    print('\n\nEvaluating model...')
     mean_reward, std_reward = evaluate_model(model, args.env, args.env_config, args.eval_episodes)
     print('\n\nMean Reward:', mean_reward)
     print('Std Reward:', std_reward)
 
-    print('Testing model...')
+    print('\n\nTesting model...')
     test_model(model, args.env, args.env_config, args.test_episodes)
