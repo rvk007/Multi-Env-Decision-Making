@@ -11,7 +11,7 @@ def make_model(config_file, env, tensorboard_log):
     # Load config
     config = parse_config(config_file)
     
-    model = DQN(
+    return DQN(
         'MlpPolicy', env,
         policy_kwargs=dict(net_arch=[256, 256]),
         learning_rate=float(config['learning_rate']),
@@ -26,4 +26,6 @@ def make_model(config_file, env, tensorboard_log):
         tensorboard_log=tensorboard_log,
     )
 
-    return model
+
+def load_model(path):
+    return DQN.load(path)

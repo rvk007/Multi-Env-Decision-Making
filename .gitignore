@@ -4,6 +4,7 @@ __pycache__/
 .DS_Store
 stable-baselines3
 clear_generatives.sh
+archive.sh
 parallel_run.sh
 logs
 weights
@@ -12,3 +13,4 @@ rlog
 mlog
 hlog
 ilog
+videos

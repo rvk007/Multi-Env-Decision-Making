@@ -15,6 +15,6 @@ def make_env(env_name, env_config_dir, record=False, video_path=None):
     env.configure(parse_config(os.path.join(env_config_dir, env_name)))
     if record:
         if video_path is None:
-            video_path = f'{env_name}_videos'
+            video_path = os.path.join('videos', f'{env_name}_videos')
         env = record_videos(env, path=video_path)
     return env
