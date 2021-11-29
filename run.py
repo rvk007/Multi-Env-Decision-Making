@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--env', required=True, help='Environment name')
-    parser.add_argument('-t', '--timesteps', type=int, default=1e6, help='Number of timesteps for training')
+    parser.add_argument('-t', '--timesteps', type=int, default=2e4, help='Number of timesteps for training')
     parser.add_argument('--eval_episodes', type=int, default=10, help='Number of evaluation episodes')
     parser.add_argument('--test_episodes', type=int, default=3, help='Number of test episodes')
     parser.add_argument('--env_config', default=os.path.join(BASE_DIR, 'environment'), help='Directory containing the environment config')

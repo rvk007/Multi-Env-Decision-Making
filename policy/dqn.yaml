@@ -1,10 +1,9 @@
 # DQN configuration
 learning_rate: 5e-4
-buffer_size: 150000
+buffer_size: 15000
 learning_starts: 200
 batch_size: 32
 gamma: 0.8
 train_freq: 1
 gradient_steps: 1
 target_update_interval: 50
-exploration_fraction: 0.7

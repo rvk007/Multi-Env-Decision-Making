@@ -1,6 +1,14 @@
 .vscode
 *.pyc
 __pycache__/
+.DS_Store
 stable-baselines3
 clear_generatives.sh
 parallel_run.sh
+logs
+weights
+run_logs
+rlog
+mlog
+hlog
+ilog

@@ -1,7 +1,5 @@
-import os
 import yaml
 from stable_baselines3 import DQN
-from environment.parse_env import make_env
 
 
 def parse_config(config_file):
@@ -24,7 +22,6 @@ def make_model(config_file, env, tensorboard_log):
         train_freq=config['train_freq'],
         gradient_steps=config['gradient_steps'],
         target_update_interval=config['target_update_interval'],
-        exploration_fraction=config['exploration_fraction'],
         verbose=1,
         tensorboard_log=tensorboard_log,
     )
