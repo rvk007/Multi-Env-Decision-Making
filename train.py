@@ -31,10 +31,10 @@ class Workspace(object):
 
         utils.set_seed_everywhere(cfg.seed)
         self.device = torch.device(cfg.device)
-        self.env = HighwayEnv(cfg.envs, cfg.seed)
+        self.env = HighwayEnv(cfg.env, cfg.seed)
         self.eval_env = HighwayEnv(
-            cfg.envs, cfg.seed + 1,
-            video_path=os.path.join(self.work_dir, 'eval_video') if cfg.save_video else None
+            cfg.env, cfg.seed + 1,
+            video_path=os.path.join(self.work_dir, 'eval_video') if cfg.env.save_video else None
         )
 
         cfg.agent.params.obs_shape = int(np.prod(self.env.observation_space.shape))

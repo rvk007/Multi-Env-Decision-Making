@@ -1,5 +1,6 @@
 import os
 import random
+import yaml
 import gym
 import highway_env
 from gym.wrappers import Monitor
@@ -7,30 +8,39 @@ from gym.wrappers import Monitor
 # TODO: Add TimeLimit and FrameSkip wrappers
 
 class HighwayEnv:
-    def __init__(self, envs, seed=42, max_random_noops=30, video_path=None):
+    def __init__(self, env, seed=42, max_random_noops=30, video_path=None):
         self.max_random_noops = max_random_noops
 
-        self.envs = [gym.make(env) for env in envs]
-        for env in self.envs:
-            env.seed(seed)
-        
-        self.recording = video_path is not None
-        if video_path:
+        self.recording = False
+        if video_path is not None:
+            self.recording = True
             os.makedirs(video_path, exist_ok=True)
-            self.envs = [
-                self._record_videos(env, os.path.join(video_path, env.__str__().split('<')[1]))
-                for env in self.envs
-            ]
+        
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        self.envs = []
+        for env_name in env.names:
+            sub_env = gym.make(env_name)
+            sub_env.configure(self._load_config(os.path.join(base_dir, env.config_dir, env_name + '.yaml')))
+            sub_env.seed(seed)
+            if video_path is not None:
+                sub_env = self._record_videos(sub_env, os.path.join(video_path, env_name), env.record_frequency)
+            self.envs.append(sub_env)
 
         self.current_env = None
         self.current_env_idx = -1
+    
+    def _load_config(self, config_path):
+        with open(config_path, 'r') as f:
+            return yaml.safe_load(f)
     
     def _validate(self):
         if self.current_env is None:
             raise AssertionError('No environment selected.')
     
-    def _record_videos(self, env, path):
-        monitor = Monitor(env, path, force=True, video_callable=lambda episode: False)
+    def _record_videos(self, env, path, record_frequency):
+        monitor = Monitor(
+            env, path, force=True, video_callable=lambda episode: episode % record_frequency == 0
+        )
         env.unwrapped.set_monitor(monitor)  # Capture intermediate frames
         return monitor
     

@@ -1,27 +1,30 @@
 # env
-envs:
-  - highway-v0
-  - merge-v0
-  - roundabout-v0
+env:
+  config_dir: env_configs
+  save_video: true
+  record_frequency: 1
+  names:
+    - highway-v0
+    - merge-v0
+    - roundabout-v0
 
 # train
-num_train_steps: 10000
+num_train_steps: 300001
 num_train_iters: 1
-num_exploration_steps: 1
-start_training_steps: 200
+num_exploration_steps: 5000
+start_training_steps: 1600
 min_eps: 0.1
 replay_buffer_capacity: ${num_train_steps}
 # Prioritized Replay Buffer
-prioritized_replay: true
+prioritized_replay: false
 prioritized_replay_alpha: 0.6
 seed: 1
 # eval
-eval_frequency: 300
-num_eval_steps: 1250
+eval_frequency: 30000
+num_eval_steps: 125000
 # misc
-log_frequency_step: 100
+log_frequency_step: 10000
 log_save_tb: true
-save_video: true
 device: cuda
 # global params
 lr: 0.0001
@@ -67,7 +70,7 @@ critic:
     encoder_cfg: ${agent.params.encoder_cfg}
     action_shape: ${agent.params.action_shape}
     num_env_paths: ${agent.params.num_env_paths}
-    hidden_dim: 16
+    hidden_dim: 64
     hidden_depth: ${hidden_depth}
     # Dueling DQN
     dueling: false
