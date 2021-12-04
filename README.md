@@ -1,1 +1,1 @@
-# Multi-Env-Decision-Making
+# Multi-Env Decision Making

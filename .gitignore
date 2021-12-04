@@ -14,3 +14,7 @@ mlog
 hlog
 ilog
 videos
+mac_display_setup.sh
+dump
+.prettierignore
+exp_local
