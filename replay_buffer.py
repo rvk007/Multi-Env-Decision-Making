@@ -1,23 +1,21 @@
 import numpy as np
-
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import utils
 
 from segment_tree import SumSegmentTree, MinSegmentTree
 
 
-class ReplayBuffer(object):
+class ReplayBuffer:
+    # TODO: Adpatation for intersection env as it has different action space
     def __init__(self, obs_shape, capacity, device):
         self.capacity = capacity
         self.device = device
 
-        self.obses = np.empty((capacity, *obs_shape), dtype=np.uint8)
-        self.next_obses = np.empty((capacity, *obs_shape), dtype=np.uint8)
+        self.obses = np.empty((capacity, *obs_shape), dtype=np.float32)
+        self.next_obses = np.empty((capacity, *obs_shape), dtype=np.float32)
         self.actions = np.empty((capacity, 1), dtype=np.int64)
         self.rewards = np.empty((capacity, 1), dtype=np.float32)
         self.not_dones = np.empty((capacity, 1), dtype=np.float32)
+        self.env = np.empty((capacity, 1), dtype=np.int64)
 
         self.idx = 0
         self.full = False
@@ -25,12 +23,13 @@ class ReplayBuffer(object):
     def __len__(self):
         return self.capacity if self.full else self.idx
 
-    def add(self, obs, action, reward, next_obs, done):
+    def add(self, obs, action, reward, next_obs, done, env):
         np.copyto(self.obses[self.idx], obs)
         np.copyto(self.actions[self.idx], action)
         np.copyto(self.rewards[self.idx], reward)
         np.copyto(self.next_obses[self.idx], next_obs)
         np.copyto(self.not_dones[self.idx], not done)
+        np.copyto(self.env[self.idx], env)
 
         self.idx = (self.idx + 1) % self.capacity
         self.full = self.full or self.idx == 0
@@ -45,6 +44,7 @@ class ReplayBuffer(object):
         next_obses = torch.as_tensor(next_obses, device=self.device).float()
 
         actions = torch.as_tensor(self.actions[idxs], device=self.device)
+        envs = torch.as_tensor(self.env[idxs], device=self.device)
         rewards = np.zeros((idxs.shape[0], 1), dtype=np.float32)
         not_dones = np.ones((idxs.shape[0], 1), dtype=np.float32)
         for i in range(n):
@@ -55,7 +55,7 @@ class ReplayBuffer(object):
         rewards = torch.as_tensor(rewards, device=self.device)
         not_dones = torch.as_tensor(not_dones, device=self.device)
 
-        return obses, actions, rewards, next_obses, not_dones
+        return obses, actions, rewards, next_obses, not_dones, envs
 
     def sample_idxs(self, batch_size, n):
         last_idx = (self.capacity if self.full else self.idx) - (n - 1)
@@ -85,8 +85,8 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         self.min_tree = MinSegmentTree(tree_capacity)
         self.max_priority = 1.0
 
-    def add(self, obs, action, reward, next_obs, done):
-        super().add(obs, action, reward, next_obs, done)
+    def add(self, obs, action, reward, next_obs, done, env):
+        super().add(obs, action, reward, next_obs, done, env)
         self.sum_tree[self.idx] = self.max_priority**self.alpha
         self.min_tree[self.idx] = self.max_priority**self.alpha
 
