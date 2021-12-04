@@ -1,0 +1,8 @@
+numpy==1.21.4
+torch==1.10.0
+tensorboard
+hydra-core==0.11.3
+termcolor
+highway_env
+matplotlib
+PyYAML
