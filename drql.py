@@ -55,14 +55,19 @@ class Critic(nn.Module):
 
         if dueling:
             # Dueling DQN: define the value and the advantage network
-            self.V, self.A = [], []
-            for _ in range(self.num_env_paths):
-                self.V.append(utils.mlp(self.encoder.feature_dim, hidden_dim, action_shape, hidden_depth))
-                self.A.append(utils.mlp(self.encoder.feature_dim, hidden_dim, action_shape, hidden_depth))
+            self.V = nn.ModuleList([
+                utils.mlp(self.encoder.feature_dim, hidden_dim, action_shape, hidden_depth)
+                for _ in range(self.num_env_paths)
+            ])
+            self.A = nn.ModuleList([
+                utils.mlp(self.encoder.feature_dim, hidden_dim, action_shape, hidden_depth)
+                for _ in range(self.num_env_paths)
+            ])
         else:
-            self.Q = []
-            for _ in range(self.num_env_paths):
-                self.Q.append(utils.mlp(self.encoder.feature_dim, hidden_dim, action_shape, hidden_depth))
+            self.Q = nn.ModuleList([
+                utils.mlp(self.encoder.feature_dim, hidden_dim, action_shape, hidden_depth)
+                for _ in range(self.num_env_paths)
+            ])
 
         self.outputs = dict()
         self.apply(utils.weight_init)
