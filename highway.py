@@ -3,18 +3,12 @@ import random
 import yaml
 import gym
 import highway_env
-from gym.wrappers import Monitor
 
 # TODO: Add TimeLimit and FrameSkip wrappers
 
 class HighwayEnv:
-    def __init__(self, env, seed=42, max_random_noops=30, video_path=None):
+    def __init__(self, env, seed=42, max_random_noops=30):
         self.max_random_noops = max_random_noops
-
-        self.recording = False
-        if video_path is not None:
-            self.recording = True
-            os.makedirs(video_path, exist_ok=True)
         
         base_dir = os.path.dirname(os.path.abspath(__file__))
         self.envs = []
@@ -22,8 +16,6 @@ class HighwayEnv:
             sub_env = gym.make(env_name)
             sub_env.configure(self._load_config(os.path.join(base_dir, env.config_dir, env_name + '.yaml')))
             sub_env.seed(seed)
-            if video_path is not None:
-                sub_env = self._record_videos(sub_env, os.path.join(video_path, env_name), env.record_frequency)
             self.envs.append(sub_env)
 
         self.current_env = None
@@ -37,12 +29,10 @@ class HighwayEnv:
         if self.current_env is None:
             raise AssertionError('No environment selected.')
     
-    def _record_videos(self, env, path, record_frequency):
-        monitor = Monitor(
-            env, path, force=True, video_callable=lambda episode: episode % record_frequency == 0
-        )
-        env.unwrapped.set_monitor(monitor)  # Capture intermediate frames
-        return monitor
+    @property
+    def current_env_name(self):
+        self._validate()
+        return self.current_env.__str__().split('-v0')[0].split('<')[-1]
     
     @property
     def num_envs(self):
@@ -78,8 +68,7 @@ class HighwayEnv:
     def reset(self):
         self.current_env_idx = random.randint(0, len(self.envs) - 1)
         self.current_env = self.envs[self.current_env_idx]
-        if not self.recording:
-            self._apply_random_noops()
+        self._apply_random_noops()
         return self.current_env.reset()
 
     def step(self, action):

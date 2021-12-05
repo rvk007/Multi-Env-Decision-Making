@@ -9,6 +9,7 @@ import utils
 from highway import HighwayEnv
 from logger import Logger
 from replay_buffer import ReplayBuffer, PrioritizedReplayBuffer
+from video import VideoRecorder
 
 
 torch.backends.cudnn.benchmark = True
@@ -32,10 +33,7 @@ class Workspace(object):
         utils.set_seed_everywhere(cfg.seed)
         self.device = torch.device(cfg.device)
         self.env = HighwayEnv(cfg.env, cfg.seed)
-        self.eval_env = HighwayEnv(
-            cfg.env, cfg.seed + 1,
-            video_path=os.path.join(self.work_dir, 'eval_video') if cfg.env.save_video else None
-        )
+        self.eval_env = HighwayEnv(cfg.env, cfg.seed + 1)
         self.best_eval_reward = 0
 
         cfg.agent.params.obs_shape = int(np.prod(self.env.observation_space.shape))
@@ -53,7 +51,9 @@ class Workspace(object):
             self.replay_buffer = ReplayBuffer(
                 self.env.observation_space.shape, cfg.replay_buffer_capacity, self.device
             )
-
+        
+        self.video_recorder = VideoRecorder(self.work_dir if cfg.env.save_video else None, fps=cfg.env.fps)
+        
         self.step = 0
 
     def evaluate(self):
@@ -62,6 +62,7 @@ class Workspace(object):
         num_eval_episodes = 0
         while eval_step < self.cfg.num_eval_steps:
             obs = self.eval_env.reset()
+            self.video_recorder.init(self.eval_env.current_env, enabled=True)
             done = False
             episode_reward = 0
             episode_step = 0
@@ -76,11 +77,13 @@ class Workspace(object):
                 # time_limit = 'TimeLimit.truncated' in info
                 # done = info['game_over'] or time_limit
                 done = terminal or info['crashed']
+                self.video_recorder.record(self.eval_env.current_env)
                 episode_reward += reward
                 episode_step += 1
                 eval_step += 1
 
             average_episode_reward += episode_reward
+            self.video_recorder.save(f'{self.eval_env.current_env_name}_{num_eval_episodes}.mp4')
             num_eval_episodes += 1
 
         average_episode_reward /= num_eval_episodes
