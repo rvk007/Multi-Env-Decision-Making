@@ -41,7 +41,7 @@ centering_position:
 scaling: 7.15
 show_trajectories: false
 render_agent: true
-offscreen_rendering: false
+offscreen_rendering: true
 manual_control: false
 real_time_rendering: false
 

@@ -6,3 +6,5 @@ termcolor
 highway_env
 matplotlib
 PyYAML
+imageio
+imageio-ffmpeg

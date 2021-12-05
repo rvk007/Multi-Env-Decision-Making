@@ -2,7 +2,7 @@
 env:
   config_dir: env_configs
   save_video: true
-  record_frequency: 1
+  fps: 5
   names:
     - highway-v0
     - merge-v0
@@ -35,8 +35,6 @@ adam_eps: 0.00015
 max_grad_norm: 10.0
 hidden_depth: 2
 batch_size: 32
-# eval
-save_checkpoint: true
 
 # agent configuration
 agent:
