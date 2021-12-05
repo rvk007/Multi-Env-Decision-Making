@@ -36,6 +36,7 @@ class Workspace(object):
             cfg.env, cfg.seed + 1,
             video_path=os.path.join(self.work_dir, 'eval_video') if cfg.env.save_video else None
         )
+        self.best_eval_reward = 0
 
         cfg.agent.params.obs_shape = int(np.prod(self.env.observation_space.shape))
         cfg.agent.params.action_shape = self.env.action_space.n
@@ -87,6 +88,10 @@ class Workspace(object):
             'eval/episode_reward', average_episode_reward, self.step
         )
         self.logger.dump(self.step, ty='eval')
+
+        if self.cfg.save_checkpoint and average_episode_reward > self.best_eval_reward:
+            self.best_eval_reward = average_episode_reward
+            torch.save(self.agent.critic.state_dict(), 'policy.pt')
 
     def run(self):
         print('Running workspace')
