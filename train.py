@@ -139,7 +139,7 @@ class Workspace(object):
 
             # run training update
             if self.step >= self.cfg.start_training_steps:
-                for _ in range(self.cfg.num_train_iters):
+                for _ in range(self.cfg.num_gradient_steps):
                     self.agent.update(self.replay_buffer, self.logger, self.step)
 
             next_obs, reward, terminal, info = self.env.step(action)

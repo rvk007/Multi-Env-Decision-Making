@@ -9,33 +9,31 @@ env:
     - roundabout-v0
 
 # train
-num_train_steps: 300001
-num_train_iters: 1
-num_exploration_steps: 5000
-start_training_steps: 1600
-min_eps: 0.1
-replay_buffer_capacity: ${num_train_steps}
+num_train_steps: 20000
+num_gradient_steps: 1
+num_exploration_steps: 500
+start_training_steps: 200
+min_eps: 0.05
+replay_buffer_capacity: 15000
 # Prioritized Replay Buffer
 prioritized_replay: false
 prioritized_replay_alpha: 0.6
 seed: 1
 # eval
-eval_frequency: 30000
-num_eval_steps: 125000
+eval_frequency: 500
+num_eval_steps: 1000
 # misc
-log_frequency_step: 10000
+log_frequency_step: 100
 log_save_tb: true
 device: cuda
 # global params
-lr: 0.0001
+lr: 0.0005
 beta_1: 0.9
 beta_2: 0.999
 weight_decay: 0.0
 adam_eps: 0.00015
 max_grad_norm: 10.0
-hidden_depth: 2
 batch_size: 32
-# eval
 save_checkpoint: true
 
 # agent configuration
@@ -49,15 +47,15 @@ agent:
     device: ${device}
     encoder_cfg: ${encoder}
     critic_cfg: ${critic}
-    discount: 0.99
+    discount: 0.8
     lr: ${lr}
     beta_1: ${beta_1}
     beta_2: ${beta_2}
     weight_decay: ${weight_decay}
     adam_eps: ${adam_eps}
     max_grad_norm: ${max_grad_norm}
-    critic_tau: 0.9
-    critic_target_update_frequency: 1
+    critic_tau: 1.0
+    critic_target_update_frequency: 50
     batch_size: ${batch_size}
     multistep_return: 10
     eval_eps: 0.05
@@ -72,8 +70,8 @@ critic:
     encoder_cfg: ${agent.params.encoder_cfg}
     action_shape: ${agent.params.action_shape}
     num_env_paths: ${agent.params.num_env_paths}
-    hidden_dim: 64
-    hidden_depth: ${hidden_depth}
+    hidden_dim: 256
+    hidden_depth: 1
     # Dueling DQN
     dueling: false
 
@@ -81,12 +79,14 @@ encoder:
   class: drql.Encoder
   params:
     input_shape: ${agent.params.obs_shape}
+    hidden_dim: 256
+    hidden_depth: 1
 
 experiment: base_config
 
 # hydra configuration
 hydra:
-  name: double_dqn
+  name: ddqn
   run:
     dir: ./exp_local/${hydra.name}_${experiment}
   sweep:

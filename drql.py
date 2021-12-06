@@ -11,13 +11,11 @@ from replay_buffer import PrioritizedReplayBuffer
 
 class Encoder(nn.Module):
     """Encodes the observation to feed into respective environment networks"""
-    def __init__(self, input_shape):
+    def __init__(self, input_shape, hidden_dim, hidden_depth):
         super().__init__()
 
-        self.feature_dim = 64
-
-        self.fc1 = nn.Linear(input_shape, 64)
-        self.fc2 = nn.Linear(64, self.feature_dim)
+        self.fc = utils.mlp(input_shape, hidden_dim, hidden_dim, hidden_depth)
+        self.feature_dim = hidden_dim
 
         self.outputs = dict()
 
@@ -25,20 +23,18 @@ class Encoder(nn.Module):
         obs = obs.reshape(obs.shape[0], -1)
         self.outputs['obs'] = obs
 
-        h = F.relu(self.fc1(obs))
-        self.outputs['fc1'] = h
-
-        out = F.relu(self.fc2(h))
-        self.outputs['fc2'] = out
+        out = self.fc(obs)
+        self.outputs['fc'] = out
 
         return out
 
     def log(self, logger, step):
         for k, v in self.outputs.items():
             logger.log_histogram(f'train_encoder/{k}_hist', v, step)
-
-        logger.log_param(f'train_encoder/fc1', self.fc1, step)
-        logger.log_param(f'train_encoder/fc2', self.fc2, step)
+        
+        for i, m in enumerate(self.fc):
+            if type(m) is nn.Linear:
+                logger.log_param(f'train_encoder/fc_{i}', m, step)
 
 
 class Critic(nn.Module):
