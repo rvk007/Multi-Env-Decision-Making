@@ -23,6 +23,7 @@ test:
     - roundabout-v0
 
 # train
+seed: 42
 num_train_steps: 60000
 num_gradient_steps: 1
 num_exploration_steps: 1500

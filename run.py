@@ -56,7 +56,7 @@ if __name__ == '__main__':
     
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     config = utils.read_config(args.config)
-    utils.set_seed_everywhere(config.env.seed)
+    utils.set_seed_everywhere(config.seed)
 
     args.output = os.path.join(args.output, config.experiment_name)
     os.makedirs(args.output, exist_ok=True)

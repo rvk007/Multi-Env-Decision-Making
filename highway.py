@@ -8,9 +8,7 @@ from gym.wrappers import Monitor
 
 
 class HighwayEnv:
-    def __init__(self, env, config_dir, offscreen_rendering=True, seed=42, max_random_noops=30, video_path=None):
-        self.max_random_noops = max_random_noops
-        
+    def __init__(self, env, config_dir, offscreen_rendering=True, video_path=None):
         self.envs = []
         for env_name in env.names:
             sub_env = gym.make(env_name)
@@ -88,7 +86,5 @@ def create_env(config, config_dir, output_dir, mode='train', offscreen_rendering
     return HighwayEnv(
         config, config_dir,
         offscreen_rendering=offscreen_rendering,
-        seed=config.seed if mode == 'train' else config.seed + 1,
-        max_random_noops=config.max_random_noops,
         video_path=output_dir if mode == 'test' and config.save_video else None
     )
