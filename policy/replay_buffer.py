@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from segment_tree import SumSegmentTree, MinSegmentTree
+from .segment_tree import SumSegmentTree, MinSegmentTree
 
 
 class ReplayBuffer:
@@ -135,3 +135,12 @@ class PrioritizedReplayBuffer(ReplayBuffer):
             self.min_tree[idx] = prio**self.alpha
 
             self.max_priority = max(self.max_priority, prio)
+
+
+def create_replay_buffer(config, env, device):
+    return PrioritizedReplayBuffer(
+        env.observation_space.shape, config.replay_buffer_capacity,
+        config.prioritized_replay_alpha, device
+    ) if config.prioritized_replay else ReplayBuffer(
+        env.observation_space.shape, config.replay_buffer_capacity, device
+    )

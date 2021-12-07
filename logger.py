@@ -112,7 +112,7 @@ class Logger(object):
         save_tb=False,
         log_frequency=10000,
         action_repeat=None,
-        agent='drq'
+        agent='drql'
     ):
         self._log_dir = log_dir
         self._log_frequency = log_frequency

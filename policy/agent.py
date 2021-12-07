@@ -2,11 +2,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.optim import Adam
 
 import utils
-import hydra
-
-from replay_buffer import PrioritizedReplayBuffer
+from .replay_buffer import PrioritizedReplayBuffer
 
 
 class Encoder(nn.Module):
@@ -39,34 +38,33 @@ class Encoder(nn.Module):
 
 class Critic(nn.Module):
     """Critic network, employes double Q-learning."""
-    def __init__(self, encoder_cfg, action_shape, num_env_paths, hidden_dim, hidden_depth, dueling):
+    def __init__(
+        self, observation_shape, action_shape, num_env_paths, encoder_hidden_dim,
+        encoder_hidden_depth, critic_hidden_dim, critic_hidden_depth, dueling
+    ):
         super().__init__()
 
         self.num_env_paths = num_env_paths
-
-        self.encoder = hydra.utils.instantiate(encoder_cfg)
-
         self.dueling = dueling
         self.action_shape = action_shape
 
+        self.encoder = Encoder(observation_shape, encoder_hidden_dim, encoder_hidden_depth)
+
         if dueling:
             # Dueling DQN: define the value and the advantage network
-            self.V = nn.ModuleList([
-                utils.mlp(self.encoder.feature_dim, hidden_dim, action_shape, hidden_depth)
-                for _ in range(self.num_env_paths)
-            ])
-            self.A = nn.ModuleList([
-                utils.mlp(self.encoder.feature_dim, hidden_dim, action_shape, hidden_depth)
-                for _ in range(self.num_env_paths)
-            ])
+            self.V = self._create_env_mlp(critic_hidden_dim, critic_hidden_depth)
+            self.A = self._create_env_mlp(critic_hidden_dim, critic_hidden_depth)
         else:
-            self.Q = nn.ModuleList([
-                utils.mlp(self.encoder.feature_dim, hidden_dim, action_shape, hidden_depth)
-                for _ in range(self.num_env_paths)
-            ])
+            self.Q = self._create_env_mlp(critic_hidden_dim, critic_hidden_depth)
 
         self.outputs = dict()
         self.apply(utils.weight_init)
+    
+    def _create_env_mlp(self, hidden_dim, hidden_depth):
+        return nn.ModuleList([
+            utils.mlp(self.encoder.feature_dim, hidden_dim, self.action_shape, hidden_depth)
+            for _ in range(self.num_env_paths)
+        ])
 
     def forward(self, obs, env_path):
 
@@ -99,10 +97,10 @@ class Critic(nn.Module):
 class DRQLAgent(object):
     """Data regularized Q-learning: Deep Q-learning."""
     def __init__(
-        self, obs_shape, action_shape, num_env_paths, device, encoder_cfg, critic_cfg, discount, lr,
-        beta_1, beta_2, weight_decay, adam_eps, max_grad_norm, critic_tau,
-        critic_target_update_frequency, batch_size, multistep_return, eval_eps, double_q,
-        prioritized_replay_beta0, prioritized_replay_beta_steps
+        self, observation_shape, action_shape, num_env_paths, encoder_config, critic_config,
+        device, discount, learning_rate, beta_1, beta_2, weight_decay, adam_eps, max_grad_norm,
+        critic_tau, critic_target_update_frequency, batch_size, multistep_return, eval_eps,
+        double_q, prioritized_replay_beta0, prioritized_replay_beta_steps
     ):
         self.device = device
         self.discount = discount
@@ -119,13 +117,21 @@ class DRQLAgent(object):
         self.prioritized_replay_beta_steps = prioritized_replay_beta_steps
         self.eps = 0
 
-        self.critic = hydra.utils.instantiate(critic_cfg).to(self.device)
-        self.critic_target = hydra.utils.instantiate(critic_cfg).to(self.device)
+        self.critic = Critic(
+            observation_shape, action_shape, num_env_paths, encoder_config.hidden_dim,
+            encoder_config.hidden_depth, critic_config.hidden_dim, critic_config.hidden_depth,
+            critic_config.dueling
+        ).to(self.device)
+        self.critic_target = Critic(
+            observation_shape, action_shape, num_env_paths, encoder_config.hidden_dim,
+            encoder_config.hidden_depth, critic_config.hidden_dim, critic_config.hidden_depth,
+            critic_config.dueling
+        ).to(self.device)
         self.critic_target.load_state_dict(self.critic.state_dict())
 
-        self.critic_optimizer = torch.optim.Adam(
+        self.critic_optimizer = Adam(
             self.critic.parameters(),
-            lr=lr,
+            lr=learning_rate,
             betas=(beta_1, beta_2),
             weight_decay=weight_decay,
             eps=adam_eps
@@ -135,10 +141,7 @@ class DRQLAgent(object):
         self.critic_target.train()
     
     def _update_sample(self, update_value, sample):
-        if sample is None:
-            return update_value
-        else:
-            return torch.cat([sample, update_value], dim=0)
+        return update_value if sample is None else torch.cat([sample, update_value], dim=0)
     
     def _reorder_samples(self, obs, action, reward, next_obs, not_done, env_paths, weights=None, idxs=None):
         """Reorder the samples on the basis of env_paths"""
@@ -262,3 +265,10 @@ class DRQLAgent(object):
 
         if step % self.critic_target_update_frequency == 0:
             utils.soft_update_params(self.critic, self.critic_target, self.critic_tau)
+
+
+def create_agent(config, env, device):
+    return DRQLAgent(
+        int(np.prod(env.observation_space.shape)), env.action_space.n, env.num_envs,
+        config.encoder, config.critic, device, **config.agent
+    )

@@ -1,7 +1,9 @@
 import random
+import yaml
 import numpy as np
 import torch
 import torch.nn as nn
+from attrdict import AttrDict
 
 
 class eval_mode(object):
@@ -18,6 +20,12 @@ class eval_mode(object):
         for model, state in zip(self.models, self.prev_states):
             model.train(state)
         return False
+
+
+def read_config(config_file):
+    with open(config_file, 'r') as f:
+        config = yaml.safe_load(f)
+    return AttrDict(config)
 
 
 def soft_update_params(net, target_net, tau):

@@ -9,19 +9,19 @@ from gym.wrappers import Monitor
 # TODO: Add TimeLimit and FrameSkip wrappers
 
 class HighwayEnv:
-    def __init__(self, env, seed=42, max_random_noops=30, video_path=None):
+    def __init__(self, env, config_dir, seed=42, max_random_noops=30, video_path=None):
         self.max_random_noops = max_random_noops
         
-        base_dir = os.path.dirname(os.path.abspath(__file__))
         self.envs = []
         for env_name in env.names:
             sub_env = gym.make(env_name)
-            sub_env.configure({'offscreen_rendering': True})
-            # sub_env.configure(self._load_config(os.path.join(base_dir, env.config_dir, env_name + '.yaml')))
+            # sub_env.configure({'offscreen_rendering': True})
+            if env.custom_config:
+                sub_env.configure(self._load_config(os.path.join(config_dir, env_name + '.yaml')))
             sub_env.seed(seed)
             if video_path is not None:
                 os.makedirs(video_path, exist_ok=True)
-                # sub_env = self._record_videos(sub_env, os.path.join(video_path, env_name), env.record_frequency)
+                sub_env = self._record_videos(sub_env, os.path.join(video_path, env_name), env.record_frequency)
             self.envs.append(sub_env)
 
         self.current_env = None
@@ -81,7 +81,7 @@ class HighwayEnv:
     def reset(self):
         self.current_env_idx = random.randint(0, len(self.envs) - 1)
         self.current_env = self.envs[self.current_env_idx]
-        self._apply_random_noops()
+        # self._apply_random_noops()
         return self.current_env.reset()
 
     def step(self, action):
@@ -91,3 +91,12 @@ class HighwayEnv:
     def render(self):
         self._validate()
         self.current_env.render()
+
+
+def create_env(config, config_dir, output_dir, mode='train'):
+    return HighwayEnv(
+        config.env, config_dir,
+        seed=config.seed if mode == 'train' else config.seed + 1,
+        max_random_noops=config.env.max_random_noops,
+        video_path=output_dir if mode == 'test' and config.env.save_video else None
+    )

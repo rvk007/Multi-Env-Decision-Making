@@ -2,74 +2,51 @@ import os
 import time
 
 import numpy as np
-
-import hydra
 import torch
+
 import utils
-from highway import HighwayEnv
+from highway import create_env
+from policy import create_agent, create_replay_buffer
 from logger import Logger
-from replay_buffer import ReplayBuffer, PrioritizedReplayBuffer
 from video import VideoRecorder
 
 
 torch.backends.cudnn.benchmark = True
 
 
-class Workspace(object):
-    def __init__(self, cfg):
-        self.work_dir = os.getcwd()
-        print(f'workspace: {self.work_dir}')
+class Trainer:
+    def __init__(self, config, env_dir, output_dir, device, logger, policy_path):
+        self.config = config
+        self.output_dir = output_dir
+        self.device = device
+        self.logger = logger
+        self.policy_path = policy_path
 
-        self.cfg = cfg
-        self.cfg.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        # Create environments
+        self.env = create_env(config, env_dir, output_dir)
+        self.eval_env = create_env(config, env_dir, output_dir, mode='eval')
 
-        self.run_mode = cfg.mode
-        self.logger = Logger(
-            self.work_dir,
-            save_tb=cfg.log_save_tb,
-            log_frequency=cfg.log_frequency_step,
-            agent=cfg.agent.name
+        # Create agent
+        self.agent = create_agent(config, self.env, device)
+
+        # Create replay buffer
+        self.replay_buffer = create_replay_buffer(config, self.env, device)
+        
+        # Create video recorder
+        self.video_recorder = VideoRecorder(
+            output_dir if config.env.save_video else None, fps=config.env.fps
         )
 
-        utils.set_seed_everywhere(cfg.seed)
-        self.device = torch.device(cfg.device)
-        self.env = HighwayEnv(cfg.env, seed=cfg.seed)
-        self.eval_env = HighwayEnv(
-            cfg.env, seed=cfg.seed + 1,
-            video_path=self.work_dir if self.run_mode == 'test' and cfg.env.save_video else None
-        )
         self.best_eval_reward = 0
-
-        cfg.agent.params.obs_shape = int(np.prod(self.env.observation_space.shape))
-        cfg.agent.params.action_shape = self.env.action_space.n
-        cfg.agent.params.num_env_paths = self.env.num_envs
-        self.agent = hydra.utils.instantiate(cfg.agent)
-
-        if cfg.prioritized_replay:
-            # Initialize the prioritized replay buffer
-            self.replay_buffer = PrioritizedReplayBuffer(
-                self.env.observation_space.shape, cfg.replay_buffer_capacity,
-                cfg.prioritized_replay_alpha, self.device
-            )
-        else:
-            self.replay_buffer = ReplayBuffer(
-                self.env.observation_space.shape, cfg.replay_buffer_capacity, self.device
-            )
-        
-        if self.run_mode == 'train':
-            self.video_recorder = VideoRecorder(self.work_dir if cfg.env.save_video else None, fps=cfg.env.fps)
-        
         self.step = 0
 
     def evaluate(self):
         average_episode_reward = 0
         eval_step = 0
         num_eval_episodes = 0
-        while eval_step < self.cfg.num_eval_steps:
+        while eval_step < self.config.num_eval_steps:
             obs = self.eval_env.reset()
-
-            if self.run_mode == 'train':
-                self.video_recorder.init(self.eval_env.current_env, enabled=True)
+            self.video_recorder.init(self.eval_env.current_env, enabled=True)
             
             done = False
             episode_reward = 0
@@ -82,22 +59,14 @@ class Workspace(object):
                         action = self.agent.act(obs, self.eval_env.current_env_idx)
 
                 obs, reward, terminal, info = self.eval_env.step(action)
-                # time_limit = 'TimeLimit.truncated' in info
-                # done = info['game_over'] or time_limit
                 done = terminal or info['crashed']
-                
-                if self.run_mode == 'train':
-                    self.video_recorder.record(self.eval_env.current_env)
-                
+                self.video_recorder.record(self.eval_env.current_env)
                 episode_reward += reward
                 episode_step += 1
                 eval_step += 1
 
             average_episode_reward += episode_reward
-            
-            if self.run_mode == 'train':
-                self.video_recorder.save(f'{self.eval_env.current_env_name}_{num_eval_episodes}.mp4')
-            
+            self.video_recorder.save(f'{self.eval_env.current_env_name}_{num_eval_episodes}.mp4')
             num_eval_episodes += 1
 
         average_episode_reward /= num_eval_episodes
@@ -106,22 +75,14 @@ class Workspace(object):
         )
         self.logger.dump(self.step, ty='eval')
 
-        if self.cfg.save_checkpoint and average_episode_reward > self.best_eval_reward:
+        if self.config.save_checkpoint and average_episode_reward > self.best_eval_reward:
             self.best_eval_reward = average_episode_reward
-            torch.save(self.agent.critic.state_dict(), 'policy.pt')
+            torch.save(self.agent.critic.state_dict(), self.policy_path)
 
     def run(self):
-        print('Running workspace')
-
-        if self.run_mode == 'test':
-            print('Evaluating')
-            self.agent.load('policy.pt')
-            self.evaluate()
-            return
-        
         episode, episode_reward, episode_step, done = 0, 0, 1, True
         start_time = time.time()
-        while self.step < self.cfg.num_train_steps:
+        while self.step < self.config.num_train_steps:
             if done:
                 if self.step > 0:
                     fps = episode_step / (time.time() - start_time)
@@ -130,7 +91,7 @@ class Workspace(object):
 
                     self.logger.log('train/episode_reward', episode_reward, self.step)
                     self.logger.log('train/episode', episode, self.step)
-                    self.logger.dump(self.step, save=(self.step > self.cfg.start_training_steps), ty='train')
+                    self.logger.dump(self.step, save=(self.step > self.config.start_training_steps), ty='train')
 
                 obs = self.env.reset()
                 done = False
@@ -139,15 +100,15 @@ class Workspace(object):
                 episode += 1
 
             # evaluate agent periodically
-            if self.step > 0 and self.step % self.cfg.eval_frequency == 0:
+            if self.step > 0 and self.step % self.config.eval_frequency == 0:
                 print('Evaluating agent')
                 self.logger.log('eval/episode', episode, self.step)
                 self.evaluate()
 
-            steps_left = self.cfg.num_exploration_steps + self.cfg.start_training_steps - self.step
-            bonus = (1.0 - self.cfg.min_eps) * steps_left / self.cfg.num_exploration_steps
-            bonus = np.clip(bonus, 0., 1. - self.cfg.min_eps)
-            self.agent.eps = self.cfg.min_eps + bonus
+            steps_left = self.config.num_exploration_steps + self.config.start_training_steps - self.step
+            bonus = (1.0 - self.config.min_eps) * steps_left / self.config.num_exploration_steps
+            bonus = np.clip(bonus, 0., 1. - self.config.min_eps)
+            self.agent.eps = self.config.min_eps + bonus
 
             self.logger.log('train/eps', self.agent.eps, self.step)
 
@@ -159,19 +120,13 @@ class Workspace(object):
                     action = self.agent.act(obs, self.env.current_env_idx)
 
             # run training update
-            if self.step >= self.cfg.start_training_steps:
-                for _ in range(self.cfg.num_gradient_steps):
+            if self.step >= self.config.start_training_steps:
+                for _ in range(self.config.num_gradient_steps):
                     self.agent.update(self.replay_buffer, self.logger, self.step)
 
             next_obs, reward, terminal, info = self.env.step(action)
-
-            # time_limit = 'TimeLimit.truncated' in info
-            # done = info['game_over'] or time_limit
             done = terminal or info['crashed']
-
             terminal = float(terminal)
-            # terminal = 0 if time_limit else terminal
-
             episode_reward += reward
 
             self.replay_buffer.add(obs, action, reward, next_obs, terminal, self.env.current_env_idx)
@@ -181,12 +136,10 @@ class Workspace(object):
             self.step += 1
 
 
-@hydra.main(config_path='config.yaml', strict=True)
-def main(cfg):
-    from train import Workspace as W
-    workspace = W(cfg)
-    workspace.run()
-
-
-if __name__ == '__main__':
-    main()
+def agent_trainer(config, env_dir, output_dir, device, policy_path):
+    logger = Logger(
+        output_dir,
+        save_tb=config.log_save_tb,
+        log_frequency=config.log_frequency_step,
+    )
+    return Trainer(config, env_dir, output_dir, device, logger, policy_path)

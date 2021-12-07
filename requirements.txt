@@ -8,3 +8,4 @@ matplotlib
 PyYAML
 imageio
 imageio-ffmpeg
+attrdict
