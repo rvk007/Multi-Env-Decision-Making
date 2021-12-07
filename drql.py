@@ -173,6 +173,10 @@ class DRQLAgent(object):
     def train(self, training=True):
         self.training = training
         self.critic.train(training)
+    
+    def load(self, checkpoint):
+        self.critic.load_state_dict(torch.load(checkpoint))
+        self.critic_target.load_state_dict(torch.load(checkpoint))
 
     def act(self, obs, env_path):
         with torch.no_grad():

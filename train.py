@@ -23,6 +23,7 @@ class Workspace(object):
         self.cfg = cfg
         self.cfg.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
+        self.run_mode = cfg.mode
         self.logger = Logger(
             self.work_dir,
             save_tb=cfg.log_save_tb,
@@ -32,8 +33,11 @@ class Workspace(object):
 
         utils.set_seed_everywhere(cfg.seed)
         self.device = torch.device(cfg.device)
-        self.env = HighwayEnv(cfg.env, cfg.seed)
-        self.eval_env = HighwayEnv(cfg.env, cfg.seed + 1)
+        self.env = HighwayEnv(cfg.env, seed=cfg.seed)
+        self.eval_env = HighwayEnv(
+            cfg.env, seed=cfg.seed + 1,
+            video_path=self.work_dir if self.run_mode == 'test' and cfg.env.save_video else None
+        )
         self.best_eval_reward = 0
 
         cfg.agent.params.obs_shape = int(np.prod(self.env.observation_space.shape))
@@ -52,7 +56,8 @@ class Workspace(object):
                 self.env.observation_space.shape, cfg.replay_buffer_capacity, self.device
             )
         
-        self.video_recorder = VideoRecorder(self.work_dir if cfg.env.save_video else None, fps=cfg.env.fps)
+        if self.run_mode == 'train':
+            self.video_recorder = VideoRecorder(self.work_dir if cfg.env.save_video else None, fps=cfg.env.fps)
         
         self.step = 0
 
@@ -62,7 +67,10 @@ class Workspace(object):
         num_eval_episodes = 0
         while eval_step < self.cfg.num_eval_steps:
             obs = self.eval_env.reset()
-            self.video_recorder.init(self.eval_env.current_env, enabled=True)
+
+            if self.run_mode == 'train':
+                self.video_recorder.init(self.eval_env.current_env, enabled=True)
+            
             done = False
             episode_reward = 0
             episode_step = 0
@@ -77,13 +85,19 @@ class Workspace(object):
                 # time_limit = 'TimeLimit.truncated' in info
                 # done = info['game_over'] or time_limit
                 done = terminal or info['crashed']
-                self.video_recorder.record(self.eval_env.current_env)
+                
+                if self.run_mode == 'train':
+                    self.video_recorder.record(self.eval_env.current_env)
+                
                 episode_reward += reward
                 episode_step += 1
                 eval_step += 1
 
             average_episode_reward += episode_reward
-            self.video_recorder.save(f'{self.eval_env.current_env_name}_{num_eval_episodes}.mp4')
+            
+            if self.run_mode == 'train':
+                self.video_recorder.save(f'{self.eval_env.current_env_name}_{num_eval_episodes}.mp4')
+            
             num_eval_episodes += 1
 
         average_episode_reward /= num_eval_episodes
@@ -98,6 +112,13 @@ class Workspace(object):
 
     def run(self):
         print('Running workspace')
+
+        if self.run_mode == 'test':
+            print('Evaluating')
+            self.agent.load('policy.pt')
+            self.evaluate()
+            return
+        
         episode, episode_reward, episode_step, done = 0, 0, 1, True
         start_time = time.time()
         while self.step < self.cfg.num_train_steps:
