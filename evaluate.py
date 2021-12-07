@@ -14,7 +14,7 @@ torch.backends.cudnn.benchmark = True
 
 
 class Evaluator:
-    def __init__(self, config, env_dir, output_dir, policy_path, device, logger):
+    def __init__(self, config, env_dir, output_dir, policy_path, device, logger, render_video):
         self.config = config
         self.output_dir = output_dir
         self.device = device
@@ -22,7 +22,9 @@ class Evaluator:
 
         # Create environments
         config.max_random_noops = 0
-        self.env = create_env(config, env_dir, output_dir, mode='test')
+        self.env = create_env(
+            config, env_dir, output_dir, mode='test', offscreen_rendering=not render_video
+        )
 
         # Create agent
         self.agent = create_agent(config, self.env, device)
@@ -70,10 +72,10 @@ class Evaluator:
         print('Max Reward Obtained:', self.best_eval_reward)
 
 
-def agent_evaluator(config, env_dir, output_dir, policy, device):
+def agent_evaluator(config, env_dir, output_dir, policy, device, render_video):
     logger = Logger(
         output_dir,
         save_tb=config.log_save_tb,
         log_frequency=config.log_frequency_step,
     )
-    return Evaluator(config, env_dir, output_dir, policy, device, logger)
+    return Evaluator(config, env_dir, output_dir, policy, device, logger, render_video)

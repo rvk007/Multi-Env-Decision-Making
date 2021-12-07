@@ -9,13 +9,13 @@ from gym.wrappers import Monitor
 # TODO: Add TimeLimit and FrameSkip wrappers
 
 class HighwayEnv:
-    def __init__(self, env, config_dir, seed=42, max_random_noops=30, video_path=None):
+    def __init__(self, env, config_dir, offscreen_rendering=True, seed=42, max_random_noops=30, video_path=None):
         self.max_random_noops = max_random_noops
         
         self.envs = []
         for env_name in env.names:
             sub_env = gym.make(env_name)
-            # sub_env.configure({'offscreen_rendering': True})
+            sub_env.configure({'offscreen_rendering': offscreen_rendering})
             if env.custom_config:
                 sub_env.configure(self._load_config(os.path.join(config_dir, env_name + '.yaml')))
             sub_env.seed(seed)
@@ -93,9 +93,10 @@ class HighwayEnv:
         self.current_env.render()
 
 
-def create_env(config, config_dir, output_dir, mode='train'):
+def create_env(config, config_dir, output_dir, mode='train', offscreen_rendering=True):
     return HighwayEnv(
         config.env, config_dir,
+        offscreen_rendering=offscreen_rendering,
         seed=config.seed if mode == 'train' else config.seed + 1,
         max_random_noops=config.env.max_random_noops,
         video_path=output_dir if mode == 'test' and config.env.save_video else None

@@ -19,9 +19,9 @@ def train(config, env_dir, output_dir, device, policy):
     trainer.run()
 
 
-def test(config, env_dir, output_dir, policy, device):
+def test(config, env_dir, output_dir, policy, device, render_video):
     print('Evaluating Policy...')
-    evaluator = agent_evaluator(config, env_dir, output_dir, policy, device)
+    evaluator = agent_evaluator(config, env_dir, output_dir, policy, device, render_video)
     evaluator.run()
 
 
@@ -49,6 +49,10 @@ if __name__ == '__main__':
         '-p', '--policy', default=None,
         help='Path to policy network. Used only in test mode. If no path given, a policy is picked from the output directory'
     )
+    parser.add_argument(
+        '--render_video', action='store_true',
+        help='Render video of agent interacting with environment. Works only in test mode'
+    )
     args = parser.parse_args()
     
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -64,4 +68,4 @@ if __name__ == '__main__':
     if args.mode == 'train':
         train(config, args.env_dir, args.output, device, args.policy)
     else:
-        test(config, args.env_dir, args.output, args.policy, device)
+        test(config, args.env_dir, args.output, args.policy, device, args.render_video)
