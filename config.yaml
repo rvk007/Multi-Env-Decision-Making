@@ -4,10 +4,8 @@ experiment_name: ddqn
 env:
   save_video: true
   fps: 5
-  custom_config: false
+  custom_config: true
   record_frequency: 10
-  max_random_noops: 30
-  seed: 42
   names:
     - highway-v0
     - merge-v0

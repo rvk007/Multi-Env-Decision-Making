@@ -17,7 +17,6 @@ class HighwayEnv:
             sub_env.configure({'offscreen_rendering': offscreen_rendering})
             if env.custom_config:
                 sub_env.configure(self._load_config(os.path.join(config_dir, env_name + '.yaml')))
-            sub_env.seed(seed)
             if video_path is not None:
                 os.makedirs(video_path, exist_ok=True)
                 sub_env = self._record_videos(sub_env, os.path.join(video_path, env_name), env.record_frequency)
@@ -65,22 +64,15 @@ class HighwayEnv:
         self.current_env_idx = -1
         for env in self.envs:
             env.close()
-
-    def _apply_random_noops(self):
-        if self.max_random_noops <= 0:
-            return
-        # Do at least 1 no-op.
-        self.current_env.reset()
-        no_ops = random.randint(1, self.max_random_noops + 1)
-        for _ in range(no_ops):
-            _, _, game_over, _ = self.current_env.step(0)
-            if game_over:
-                self.current_env.reset()
+    
+    def _set_seed(self):
+        self._validate()
+        self.current_env.seed(random.randint(1, 100))
 
     def reset(self):
         self.current_env_idx = random.randint(0, len(self.envs) - 1)
         self.current_env = self.envs[self.current_env_idx]
-        # self._apply_random_noops()
+        self._set_seed()
         return self.current_env.reset()
 
     def step(self, action):
