@@ -6,7 +6,6 @@ import gym
 import highway_env
 from gym.wrappers import Monitor
 
-# TODO: Add TimeLimit and FrameSkip wrappers
 
 class HighwayEnv:
     def __init__(self, env, config_dir, offscreen_rendering=True, seed=42, max_random_noops=30, video_path=None):

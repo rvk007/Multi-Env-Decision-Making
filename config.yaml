@@ -20,9 +20,10 @@ save_checkpoint: true
 
 # test
 test:
-  envs:
+  envs: # these envs will be used for testing
     - highway-v0
     - merge-v0
+    - roundabout-v0
 
 # train
 num_train_steps: 60000

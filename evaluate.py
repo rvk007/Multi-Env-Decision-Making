@@ -18,13 +18,15 @@ class Evaluator:
         self.logger = logger
 
         # Create environments
-        config.max_random_noops = 0
+        self.config.max_random_noops = 0
+        self.agent_env_paths = {x.split('-v0')[0]: i for i, x in enumerate(self.config.env.names)}
+        self.config['env']['names'] = self.config.test.envs
         self.env = create_env(
-            config.env, env_dir, output_dir, mode='test', offscreen_rendering=not render_video
+            self.config.env, env_dir, output_dir, mode='test', offscreen_rendering=not render_video
         )
 
         # Create agent
-        self.agent = create_agent(config, self.env, device)
+        self.agent = create_agent(self.config, self.env, device, num_envs=len(self.agent_env_paths))
         self.agent.load(policy_path)
 
         self.best_eval_reward = 0
@@ -45,7 +47,7 @@ class Evaluator:
                     action = self.env.action_space.sample()
                 else:
                     with utils.eval_mode(self.agent):
-                        action = self.agent.act(obs, self.env.current_env_idx)
+                        action = self.agent.act(obs, self.agent_env_paths[self.env.current_env_name])
 
                 obs, reward, terminal, info = self.env.step(action)
                 done = terminal or info['crashed']

@@ -267,8 +267,9 @@ class DRQLAgent(object):
             utils.soft_update_params(self.critic, self.critic_target, self.critic_tau)
 
 
-def create_agent(config, env, device):
+def create_agent(config, env, device, num_envs=0):
     return DRQLAgent(
-        int(np.prod(env.observation_space.shape)), env.action_space.n, env.num_envs,
+        int(np.prod(env.observation_space.shape)), env.action_space.n,
+        env.num_envs if num_envs == 0 else num_envs,
         config.encoder, config.critic, device, **config.agent
     )
