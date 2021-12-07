@@ -1,55 +1,15 @@
 # Base parameters
 observation:
   type: Kinematics
-  vehicles_count: 15
-  features:
-    - presence
-    - x
-    - y
-    - vx
-    - vy
-    - cos_h
-    - sin_h
-  features_range:
-    x:
-      - -100
-      - 100
-    y:
-      - -100
-      - 100
-    vx:
-      - -20
-      - 20
-    vy:
-      - -20
-      - 20
-  absolute: true
-  flatten: false
-  observe_intentions: false
 action:
   type: DiscreteMetaAction
-  longitudinal: true
-  lateral: false
 simulation_frequency: 15
 policy_frequency: 1
-other_vehicles_type: highway_env.vehicle.behavior.IDMVehicle
-screen_width: 600
-screen_height: 600
-centering_position:
-  - 0.5
-  - 0.6
-scaling: 7.15
 show_trajectories: false
-render_agent: true
-offscreen_rendering: true
-manual_control: false
-real_time_rendering: false
 
 # Environment specific parameters
 duration: 13
 destination: o1
-controlled_vehicles: 1
-initial_vehicle_count: 10
 spawn_probability: 0.6
 collision_reward: -5
 high_speed_reward: 2

@@ -15,7 +15,6 @@ env:
 
 log_frequency_step: 300
 log_save_tb: true
-batch_size: 32
 save_checkpoint: true
 
 # test

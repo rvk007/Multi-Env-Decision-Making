@@ -1,11 +1,10 @@
 import os
+import shutil
 import argparse
 
 import torch
 
 import utils
-from highway import create_env
-from policy import create_agent
 from train import agent_trainer
 from evaluate import agent_evaluator
 
@@ -69,3 +68,8 @@ if __name__ == '__main__':
         train(config, args.env_dir, args.output, device, args.policy)
     else:
         test(config, args.env_dir, args.output, args.policy, device, args.render_video)
+    
+    # Store configs in the output directory
+    utils.dump_config(config, os.path.join(args.output, 'config.yaml'))
+    if config.env.custom_config:
+        shutil.copy(args.env_dir, args.output)
