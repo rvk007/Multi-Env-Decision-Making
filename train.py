@@ -1,3 +1,4 @@
+import os
 import time
 
 import numpy as np
@@ -133,6 +134,11 @@ class Trainer:
             obs = next_obs
             episode_step += 1
             self.step += 1
+        
+        torch.save(
+            self.agent.critic.state_dict(),
+            f'{os.path.splitext(self.policy_path)[0]}_last.pt'
+        )
 
 
 def agent_trainer(config, env_dir, output_dir, device, policy_path):
