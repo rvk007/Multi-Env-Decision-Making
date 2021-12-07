@@ -1,6 +1,3 @@
-import os
-import time
-
 import numpy as np
 import torch
 
@@ -23,7 +20,7 @@ class Evaluator:
         # Create environments
         config.max_random_noops = 0
         self.env = create_env(
-            config, env_dir, output_dir, mode='test', offscreen_rendering=not render_video
+            config.env, env_dir, output_dir, mode='test', offscreen_rendering=not render_video
         )
 
         # Create agent

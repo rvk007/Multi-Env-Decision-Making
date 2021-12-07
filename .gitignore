@@ -18,3 +18,4 @@ mac_display_setup.sh
 dump
 .prettierignore
 exp_local
+output

@@ -7,17 +7,22 @@ env:
   custom_config: false
   record_frequency: 10
   max_random_noops: 30
+  seed: 42
   names:
     - highway-v0
     - merge-v0
     - roundabout-v0
 
-mode: train
-seed: 42
 log_frequency_step: 300
 log_save_tb: true
 batch_size: 32
 save_checkpoint: true
+
+# test
+test:
+  envs:
+    - highway-v0
+    - merge-v0
 
 # train
 num_train_steps: 60000

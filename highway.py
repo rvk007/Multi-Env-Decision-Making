@@ -95,9 +95,9 @@ class HighwayEnv:
 
 def create_env(config, config_dir, output_dir, mode='train', offscreen_rendering=True):
     return HighwayEnv(
-        config.env, config_dir,
+        config, config_dir,
         offscreen_rendering=offscreen_rendering,
         seed=config.seed if mode == 'train' else config.seed + 1,
-        max_random_noops=config.env.max_random_noops,
-        video_path=output_dir if mode == 'test' and config.env.save_video else None
+        max_random_noops=config.max_random_noops,
+        video_path=output_dir if mode == 'test' and config.save_video else None
     )

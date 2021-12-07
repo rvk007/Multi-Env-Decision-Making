@@ -1,4 +1,3 @@
-import os
 import time
 
 import numpy as np
@@ -23,8 +22,8 @@ class Trainer:
         self.policy_path = policy_path
 
         # Create environments
-        self.env = create_env(config, env_dir, output_dir)
-        self.eval_env = create_env(config, env_dir, output_dir, mode='eval')
+        self.env = create_env(config.env, env_dir, output_dir)
+        self.eval_env = create_env(config.env, env_dir, output_dir, mode='eval')
 
         # Create agent
         self.agent = create_agent(config, self.env, device)
