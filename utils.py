@@ -30,7 +30,7 @@ def read_config(config_file):
 
 def dump_config(config, file):
     with open(file, 'w') as f:
-        yaml.dump(config)
+        yaml.dump(config, f)
 
 
 def soft_update_params(net, target_net, tau):

@@ -55,7 +55,7 @@ agent:
   eval_eps: 0.05
   double_q: true # Double Q learning
   prioritized_replay_beta0: 0.4
-  prioritized_replay_beta_steps: ${num_train_steps}
+  prioritized_replay_beta_steps: 60000
 
 critic:
   hidden_dim: 256

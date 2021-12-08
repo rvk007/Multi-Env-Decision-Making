@@ -70,6 +70,6 @@ if __name__ == '__main__':
         test(config, args.env_dir, args.output, args.policy, device, args.render_video)
     
     # Store configs in the output directory
-    utils.dump_config(config, os.path.join(args.output, 'config.yaml'))
+    utils.dump_config(dict(config), os.path.join(args.output, 'config.yaml'))
     if config.env.custom_config:
         shutil.copytree(args.env_dir, os.path.join(args.output, os.path.basename(args.env_dir)))
