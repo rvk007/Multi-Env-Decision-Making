@@ -72,4 +72,4 @@ if __name__ == '__main__':
     # Store configs in the output directory
     utils.dump_config(config, os.path.join(args.output, 'config.yaml'))
     if config.env.custom_config:
-        shutil.copy(args.env_dir, args.output)
+        shutil.copytree(args.env_dir, os.path.join(args.output, os.path.basename(args.env_dir)))
