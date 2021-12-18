@@ -37,7 +37,7 @@ if __name__ == '__main__':
         help='Directory containing environment configs'
     )
     parser.add_argument(
-        '--output', default=os.path.join(BASE_DIR, 'output'),
+        '--output', default=os.path.join(BASE_DIR, 'experiments'),
         help='Directory to save logs and results'
     )
     parser.add_argument(
@@ -53,7 +53,7 @@ if __name__ == '__main__':
         help='Render video of agent interacting with environment. Works only in test mode'
     )
     args = parser.parse_args()
-    
+
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     config = utils.read_config(args.config)
     utils.set_seed_everywhere(config.seed)
@@ -63,12 +63,12 @@ if __name__ == '__main__':
 
     if args.policy is None:
         args.policy = os.path.join(args.output, f'{config.experiment_name}.pt')
-    
+
     if args.mode == 'train':
         train(config, args.env_dir, args.output, device, args.policy)
     else:
         test(config, args.env_dir, args.output, args.policy, device, args.render_video)
-    
+
     # Store configs in the output directory
     utils.dump_config(dict(config), os.path.join(args.output, 'config.yaml'))
     if config.env.custom_config:
