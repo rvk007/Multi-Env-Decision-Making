@@ -1,6 +1,6 @@
 # Multi-Env Decision Making
 
-![https://shantanuacharya.notion.site/Multi-Env-Decision-Making-d40e0ad783e64eebbb755756306e8ed9](https://img.shields.io/badge/Website-Blog-blue)
+[![Blog](https://img.shields.io/badge/Website-Blog-blue)](https://shantanuacharya.notion.site/Multi-Env-Decision-Making-d40e0ad783e64eebbb755756306e8ed9)
 
 One of the current major areas of research in Reinforcement Learning is trying to make policies that are generalizable. Currently, in most of the tasks, a policy trained to perform well in an environment starts to struggle when even deployed in a slightly different environment.
 
@@ -44,4 +44,4 @@ To evaluate a policy (with video rendering in real-time)
 
 ## Contact/Getting Help
 
-To know more about the experiments we conducted and their results, please refer to the [https://shantanuacharya.notion.site/Multi-Env-Decision-Making-d40e0ad783e64eebbb755756306e8ed9](blog). If you still have questions, feel free to raise an issue.
+To know more about the experiments we conducted and their results, please refer to the [blog](https://shantanuacharya.notion.site/Multi-Env-Decision-Making-d40e0ad783e64eebbb755756306e8ed9). If you still have questions, feel free to raise an issue.
