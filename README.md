@@ -26,6 +26,7 @@ To train the multi-env policy, the observations are rolled out randomly from all
 ## Setup Instructions
 
 To run the scripts, first install the necessary packages by running the command
+
 `$ pip install -r requirements.txt`
 
 ## Usage
