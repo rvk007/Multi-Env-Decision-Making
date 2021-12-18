@@ -1,0 +1,67 @@
+experiment_name: ddqn_256_512_units_highway_merge_roundabout
+
+# env
+env:
+  save_video: true
+  fps: 5
+  custom_config: true
+  record_frequency: 10
+  names:
+    - highway-v0
+    - merge-v0
+    - roundabout-v0
+
+log_frequency_step: 600
+log_save_tb: true
+save_checkpoint: true
+
+# test
+test:
+  envs: # these envs will be used for testing
+    - highway-v0
+    - merge-v0
+    - roundabout-v0
+
+# train
+seed: 42
+num_train_steps: 80000
+num_gradient_steps: 1
+num_exploration_steps: 1600
+start_training_steps: 800
+min_eps: 0.05
+replay_buffer_capacity: 80000
+
+# eval
+eval_frequency: 3000
+num_eval_steps: 2000
+
+# Prioritized Replay Buffer
+prioritized_replay: false
+prioritized_replay_alpha: 0.6
+
+# agent configuration
+agent:
+  discount: 0.8
+  learning_rate: 0.0005
+  beta_1: 0.9
+  beta_2: 0.999
+  weight_decay: 0.0
+  adam_eps: 0.00015
+  max_grad_norm: 10.0
+  critic_tau: 1.0
+  critic_target_update_frequency: 50
+  batch_size: 128
+  multistep_return: 10
+  eval_eps: 0.05
+  double_q: true # Double Q learning
+  prioritized_replay_beta0: 0.4
+  prioritized_replay_beta_steps: 80000
+
+critic:
+  hidden_dim: 512
+  hidden_depth: 1
+  dueling: false # Dueling DQN
+
+encoder:
+  hidden_dim: 256
+  hidden_depth: 1
